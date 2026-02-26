@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CryptoMacro — Research & Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #080c10; --surface: #0d1318; --border: #1a2530;
+    --accent: #c8f542; --accent2: #3df0c2; --text: #e8edf2;
+    --muted: #5a7080; --red: #ff4d4d; --gold: #f0b429;
+  }
+  html { scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--text); font-family: 'Libre Baskerville', Georgia, serif; line-height: 1.6; overflow-x: hidden; }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background-image: linear-gradient(rgba(200,245,66,0.015) 1px, transparent 1px), linear-gradient(90deg, rgba(200,245,66,0.015) 1px, transparent 1px);
+    background-size: 60px 60px; pointer-events: none; z-index: 0;
+  }
+
+  /* NAV */
+  nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; padding: 0 48px; height: 68px; background: rgba(8,12,16,0.9); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
+  .nav-logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.25rem; letter-spacing: -0.02em; color: var(--text); text-decoration: none; }
+  .nav-logo span { color: var(--accent); }
+  .nav-links { display: flex; gap: 40px; list-style: none; }
+  .nav-links a { font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); text-decoration: none; transition: color 0.2s; }
+  .nav-links a:hover { color: var(--accent); }
+  .nav-cta { font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; background: var(--accent); color: #080c10; border: none; padding: 10px 22px; cursor: pointer; font-weight: 500; transition: opacity 0.2s; }
+  .nav-cta:hover { opacity: 0.85; }
+
+  .live-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); margin-right: 6px; animation: blink 2s ease-in-out infinite; vertical-align: middle; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* TICKER */
+  .ticker-wrap { position: fixed; top: 68px; left: 0; right: 0; z-index: 99; background: var(--surface); border-bottom: 1px solid var(--border); height: 36px; overflow: hidden; display: flex; align-items: center; }
+  .ticker-label { font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--accent); padding: 0 20px 0 16px; border-right: 1px solid var(--border); flex-shrink: 0; white-space: nowrap; display: flex; align-items: center; }
+  .ticker-viewport { overflow: hidden; flex: 1; height: 100%; position: relative; }
+  .ticker-track { display: flex; align-items: center; height: 100%; white-space: nowrap; position: absolute; left: 0; top: 0; }
+  .ticker-item { font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem; letter-spacing: 0.08em; padding: 0 28px; color: var(--muted); display: inline-flex; gap: 8px; align-items: center; border-right: 1px solid var(--border); }
+  .ticker-item .sym { color: var(--text); font-weight: 500; }
+  .ticker-item .up { color: var(--accent); }
+  .ticker-item .dn { color: var(--red); }
+
+  /* SKELETON */
+  .skeleton { background: linear-gradient(90deg, var(--border) 25%, #1e3040 50%, var(--border) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 2px; display: inline-block; }
+  @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+  /* HERO */
+  .hero { position: relative; min-height: 100vh; padding: 160px 48px 100px; display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; z-index: 1; }
+  .hero-orb { position: absolute; width: 600px; height: 600px; border-radius: 50%; background: radial-gradient(circle, rgba(200,245,66,0.08) 0%, transparent 70%); top: 50%; left: 30%; transform: translate(-50%,-50%); pointer-events: none; animation: pulse 6s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{opacity:0.6;transform:translate(-50%,-50%) scale(1)} 50%{opacity:1;transform:translate(-50%,-50%) scale(1.08)} }
+  .hero-eyebrow { font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); margin-bottom: 24px; display: flex; align-items: center; gap: 12px; }
+  .hero-eyebrow::before { content: ''; display: inline-block; width: 32px; height: 1px; background: var(--accent); }
+  h1 { font-family: 'Syne', sans-serif; font-weight: 800; font-size: clamp(3rem, 6vw, 5.5rem); line-height: 0.95; letter-spacing: -0.03em; margin-bottom: 28px; }
+  h1 em { font-style: italic; font-family: 'Libre Baskerville', serif; color: var(--accent2); }
+  .hero-desc { font-size: 1.05rem; color: #8a9fb0; line-height: 1.75; max-width: 460px; margin-bottom: 40px; }
+  .hero-actions { display: flex; gap: 16px; align-items: center; }
+  .btn-primary { font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; background: var(--accent); color: #080c10; border: none; padding: 14px 32px; cursor: pointer; font-weight: 500; transition: all 0.2s; }
+  .btn-primary:hover { background: #d4ff55; }
+  .btn-ghost { font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; background: transparent; color: var(--muted); border: 1px solid var(--border); padding: 14px 32px; cursor: pointer; transition: all 0.2s; }
+  .btn-ghost:hover { border-color: var(--muted); color: var(--text); }
+  .hero-stats { display: flex; flex-direction: column; gap: 20px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); padding: 24px 28px; position: relative; overflow: hidden; animation: fadeUp 0.6s ease both; }
+  .stat-card:nth-child(1){animation-delay:.1s}.stat-card:nth-child(2){animation-delay:.2s}.stat-card:nth-child(3){animation-delay:.3s}
+  @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:none} }
+  .stat-card::before { content:''; position:absolute; left:0;top:0;bottom:0; width:3px; background:var(--accent); }
+  .stat-card.red::before { background:var(--red); }
+  .stat-card.teal::before { background:var(--accent2); }
+  .stat-label { font-family: 'IBM Plex Mono', monospace; font-size: 0.62rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+  .stat-value { font-family: 'Syne', sans-serif; font-size: 2rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1; min-height: 2rem; }
+  .stat-change { font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem; margin-top: 8px; color: var(--muted); min-height: 1rem; }
+  .pos { color: var(--accent); } .neg { color: var(--red); }
+  .last-updated { font-family: 'IBM Plex Mono', monospace; font-size: 0.58rem; color: var(--muted); opacity: 0.6; margin-top: 16px; }
+
+  /* SECTIONS */
+  section { position: relative; z-index: 1; padding: 100px 48px; }
+  .section-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 60px; border-bottom: 1px solid var(--border); padding-bottom: 24px; }
+  .section-tag { font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+  h2 { font-family: 'Syne', sans-serif; font-weight: 800; font-size: clamp(2rem, 4vw, 3rem); letter-spacing: -0.03em; line-height: 1; }
+  .section-link { font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); text-decoration: none; transition: color 0.2s; flex-shrink: 0; }
+  .section-link:hover { color: var(--accent); }
+  .api-badge { font-family: 'IBM Plex Mono', monospace; font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase; padding: 5px 12px; border: 1px solid var(--border); color: var(--muted); }
+  .api-badge.ok { border-color: rgba(200,245,66,0.4); color: var(--accent); }
+  .api-badge.err { border-color: rgba(255,77,77,0.4); color: var(--red); }
+
+  /* MARKETS TABLE */
+  .markets-table { width: 100%; border-collapse: collapse; }
+  .markets-table th { font-family: 'IBM Plex Mono', monospace; font-size: 0.58rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); padding: 12px 18px; text-align: right; border-bottom: 1px solid var(--border); font-weight: 400; background: var(--surface); }
+  .markets-table th:first-child { text-align: left; }
+  .markets-table td { padding: 14px 18px; text-align: right; border-bottom: 1px solid rgba(26,37,48,0.6); font-family: 'IBM Plex Mono', monospace; font-size: 0.76rem; vertical-align: middle; }
+  .markets-table td:first-child { text-align: left; }
+  .markets-table tr:last-child td { border-bottom: none; }
+  .markets-table tbody tr { background: var(--bg); transition: background 0.15s; }
+  .markets-table tbody tr:hover { background: var(--surface); }
+  .coin-name { display: flex; align-items: center; gap: 12px; }
+  .coin-rank { font-size: 0.6rem; color: var(--muted); min-width: 18px; }
+  .coin-sym { color: var(--text); font-weight: 500; font-size: 0.82rem; }
+  .coin-full { color: var(--muted); font-size: 0.62rem; margin-top: 2px; }
+  .price-cell { color: var(--text); font-weight: 500; }
+  .chg-pos { color: var(--accent); }
+  .chg-neg { color: var(--red); }
+  .muted-cell { color: var(--muted); }
+
+  /* DOMINANCE */
+  .dom-section { background: var(--surface); border: 1px solid var(--border); padding: 32px 40px; margin-top: 2px; }
+  .dom-title { font-family: 'IBM Plex Mono', monospace; font-size: 0.62rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 20px; }
+  .dom-bar { height: 10px; display: flex; border-radius: 2px; overflow: hidden; gap: 2px; background: var(--border); }
+  .dom-seg { height: 100%; transition: flex 1s ease; }
+  .dom-labels { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 14px; }
+  .dom-label { font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+  .dom-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+  /* MACRO */
+  .indicators-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--border); margin-top: 2px; }
+  .indicator { background: var(--bg); padding: 32px 28px; }
+  .indicator-name { font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+  .indicator-value { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 2.2rem; letter-spacing: -0.03em; margin-bottom: 8px; min-height: 2.4rem; }
+  .indicator-sub { font-family: 'IBM Plex Mono', monospace; font-size: 0.62rem; color: var(--muted); }
+  .indicator-trend { margin-top: 18px; height: 40px; display: flex; align-items: flex-end; gap: 3px; }
+  .bar { flex: 1; border-radius: 1px; background: var(--border); }
+  .bar.hi { background: rgba(200,245,66,0.3); }
+
+  /* CHART */
+  .chart-section { background: var(--surface); border: 1px solid var(--border); padding: 40px; margin-top: 2px; }
+  .chart-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; }
+  .chart-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.1rem; }
+  .chart-area { height: 220px; position: relative; overflow: hidden; }
+  .chart-svg { width: 100%; height: 100%; }
+
+  /* RESEARCH */
+  .research-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--border); }
+  .research-card { background: var(--bg); padding: 36px 32px; transition: background 0.25s; cursor: pointer; }
+  .research-card:hover { background: var(--surface); }
+  .research-card:first-child { grid-column: 1/3; background: var(--surface); }
+  .card-cat { font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--accent2); margin-bottom: 16px; }
+  .card-cat.macro { color: var(--gold); }
+  .card-cat.policy { color: #c084fc; }
+  .card-title { font-family: 'Libre Baskerville', serif; font-size: 1.25rem; line-height: 1.3; margin-bottom: 16px; }
+  .research-card:first-child .card-title { font-size: 1.8rem; }
+  .card-excerpt { font-size: 0.88rem; color: var(--muted); line-height: 1.65; margin-bottom: 24px; }
+  .card-meta { font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; color: var(--muted); display: flex; gap: 12px; }
+
+  /* NEWSLETTER */
+  .newsletter { background: var(--surface); border: 1px solid var(--border); padding: 80px 60px; display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; margin: 0 48px; }
+  .newsletter h2 { font-size: 2.4rem; }
+  .nl-form { display: flex; flex-direction: column; gap: 12px; }
+  .nl-form input, .nl-form select { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 14px 18px; font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; outline: none; transition: border-color 0.2s; appearance: none; }
+  .nl-form input:focus { border-color: var(--accent); }
+  .nl-form input::placeholder { color: var(--muted); }
+  .nl-note { font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; color: var(--muted); margin-top: 4px; }
+
+  /* FOOTER */
+  footer { position: relative; z-index: 1; border-top: 1px solid var(--border); padding: 60px 48px 40px; margin-top: 100px; }
+  .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 60px; margin-bottom: 60px; }
+  .footer-brand p { font-size: 0.88rem; color: var(--muted); line-height: 1.7; margin-top: 16px; max-width: 280px; }
+  .footer-col h4 { font-family: 'IBM Plex Mono', monospace; font-size: 0.62rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 20px; }
+  .footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+  .footer-col a { font-size: 0.88rem; color: #6a8090; text-decoration: none; transition: color 0.2s; }
+  .footer-col a:hover { color: var(--text); }
+  .footer-bottom { display: flex; justify-content: space-between; border-top: 1px solid var(--border); padding-top: 28px; font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; letter-spacing: 0.1em; color: var(--muted); text-transform: uppercase; }
+  ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: var(--bg); } ::-webkit-scrollbar-thumb { background: var(--border); }
+  .fade-in { opacity: 0; transform: translateY(24px); transition: opacity 0.7s ease, transform 0.7s ease; }
+  .fade-in.visible { opacity: 1; transform: none; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="#" class="nav-logo">Crypto<span>Macro</span></a>
+  <ul class="nav-links">
+    <li><a href="#markets">Markets</a></li>
+    <li><a href="#macro">Macro</a></li>
+    <li><a href="#research">Research</a></li>
+    <li><a href="#about">About</a></li>
+  </ul>
+  <button class="nav-cta">Subscribe</button>
+</nav>
+
+<div class="ticker-wrap">
+  <div class="ticker-label"><span class="live-dot"></span>Live</div>
+  <div class="ticker-viewport">
+    <div class="ticker-track" id="ticker-track">
+      <span class="ticker-item"><span style="color:var(--muted)">Fetching market data…</span></span>
+    </div>
+  </div>
+</div>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-orb"></div>
+  <div>
+    <div class="hero-eyebrow">Independent Research · Live Data</div>
+    <h1>Where <em>Capital</em><br>Meets<br>Chain</h1>
+    <p class="hero-desc">Institutional-grade research at the intersection of global macroeconomics and digital assets. Live prices and on-chain signals updated every 60 seconds.</p>
+    <div class="hero-actions">
+      <button class="btn-primary" onclick="document.getElementById('markets').scrollIntoView({behavior:'smooth'})">Live Markets ↓</button>
+      <button class="btn-ghost" onclick="document.getElementById('research').scrollIntoView({behavior:'smooth'})">Read Research</button>
+    </div>
+    <div class="last-updated" id="last-updated">Data via CoinGecko · Connecting…</div>
+  </div>
+  <div class="hero-stats">
+    <div class="stat-card">
+      <div class="stat-label">Bitcoin (BTC)</div>
+      <div class="stat-value" id="h-btc-price"><span class="skeleton" style="width:140px;height:1.8rem">&nbsp;</span></div>
+      <div class="stat-change" id="h-btc-chg">&nbsp;</div>
+    </div>
+    <div class="stat-card red">
+      <div class="stat-label">Ethereum (ETH)</div>
+      <div class="stat-value" id="h-eth-price"><span class="skeleton" style="width:120px;height:1.8rem">&nbsp;</span></div>
+      <div class="stat-change" id="h-eth-chg">&nbsp;</div>
+    </div>
+    <div class="stat-card teal">
+      <div class="stat-label">BTC Dominance · Total Market Cap</div>
+      <div class="stat-value" id="h-dom"><span class="skeleton" style="width:100px;height:1.8rem">&nbsp;</span></div>
+      <div class="stat-change" id="h-mcap">&nbsp;</div>
+    </div>
+  </div>
+</section>
+
+<!-- MARKETS -->
+<section id="markets">
+  <div class="section-header fade-in">
+    <div>
+      <div class="section-tag">Live · CoinGecko API</div>
+      <h2>Crypto Markets</h2>
+    </div>
+    <span id="api-badge" class="api-badge">Connecting…</span>
+  </div>
+  <div class="fade-in" style="overflow-x:auto">
+    <table class="markets-table">
+      <thead>
+        <tr>
+          <th style="text-align:left"># Asset</th>
+          <th>Price</th>
+          <th>1h</th>
+          <th>24h</th>
+          <th>7d</th>
+          <th>Market Cap</th>
+          <th>24h Volume</th>
+          <th>7d</th>
+        </tr>
+      </thead>
+      <tbody id="markets-body">
+        <tr><td colspan="8" style="text-align:center;padding:48px;font-family:'IBM Plex Mono',monospace;font-size:0.7rem;color:var(--muted)">Fetching live data…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- DOMINANCE + MACRO -->
+<section id="macro" style="padding-top:0">
+  <div class="section-header fade-in">
+    <div>
+      <div class="section-tag">Market Structure & Macro</div>
+      <h2>Indicators</h2>
+    </div>
+    <a href="#" class="section-link">Full Terminal →</a>
+  </div>
+
+  <div class="dom-section fade-in">
+    <div class="dom-title">Market Cap Dominance — Live</div>
+    <div class="dom-bar" id="dom-bar"><div class="skeleton" style="width:100%;height:10px">&nbsp;</div></div>
+    <div class="dom-labels" id="dom-labels"><span style="font-family:'IBM Plex Mono',monospace;font-size:.6rem;color:var(--muted)">Loading…</span></div>
+  </div>
+
+  <div class="indicators-grid fade-in">
+    <div class="indicator">
+      <div class="indicator-name">US CPI YoY</div>
+      <div class="indicator-value" style="color:var(--gold)">2.9<span style="font-size:1rem;color:var(--muted)">%</span></div>
+      <div class="indicator-sub">Jan 2026 · Prev 3.1% · BLS</div>
+      <div class="indicator-trend">
+        <div class="bar" style="height:70%"></div><div class="bar" style="height:80%"></div>
+        <div class="bar" style="height:90%"></div><div class="bar" style="height:85%"></div>
+        <div class="bar" style="height:75%"></div><div class="bar" style="height:62%"></div>
+        <div class="bar" style="height:55%"></div><div class="bar hi" style="height:48%"></div>
+      </div>
+    </div>
+    <div class="indicator">
+      <div class="indicator-name">Fed Funds Rate</div>
+      <div class="indicator-value">4.33<span style="font-size:1rem;color:var(--muted)">%</span></div>
+      <div class="indicator-sub">Target 4.25–4.50% · FOMC</div>
+      <div class="indicator-trend">
+        <div class="bar" style="height:20%"></div><div class="bar" style="height:38%"></div>
+        <div class="bar" style="height:60%"></div><div class="bar" style="height:85%"></div>
+        <div class="bar hi" style="height:95%"></div><div class="bar hi" style="height:90%"></div>
+        <div class="bar hi" style="height:83%"></div><div class="bar hi" style="height:76%"></div>
+      </div>
+    </div>
+    <div class="indicator">
+      <div class="indicator-name">10Y Treasury</div>
+      <div class="indicator-value">4.51<span style="font-size:1rem;color:var(--muted)">%</span></div>
+      <div class="indicator-sub">+3bps · 2Y 4.28% · Spread +23bps</div>
+      <div class="indicator-trend">
+        <div class="bar" style="height:52%"></div><div class="bar" style="height:60%"></div>
+        <div class="bar" style="height:50%"></div><div class="bar" style="height:67%"></div>
+        <div class="bar" style="height:72%"></div><div class="bar" style="height:65%"></div>
+        <div class="bar hi" style="height:73%"></div><div class="bar" style="height:69%"></div>
+      </div>
+    </div>
+    <div class="indicator">
+      <div class="indicator-name">Fear & Greed Index</div>
+      <div class="indicator-value" id="fng-val"><span class="skeleton" style="width:60px;height:2rem">&nbsp;</span></div>
+      <div class="indicator-sub" id="fng-sub">Loading · Alternative.me</div>
+      <div class="indicator-trend" id="fng-bars">
+        <div class="bar" style="height:40%"></div><div class="bar" style="height:55%"></div>
+        <div class="bar" style="height:62%"></div><div class="bar" style="height:74%"></div>
+        <div class="bar" style="height:68%"></div><div class="bar" style="height:80%"></div>
+        <div class="bar" style="height:76%"></div><div class="bar hi" style="height:86%"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="chart-section fade-in">
+    <div class="chart-header">
+      <div class="chart-title" id="chart-title">Bitcoin — 7 Day Price</div>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:.62rem;color:var(--muted)">Source: CoinGecko</span>
+    </div>
+    <div class="chart-area">
+      <svg class="chart-svg" id="btc-svg" viewBox="0 0 900 210" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#c8f542" stop-opacity="0.45"/>
+            <stop offset="100%" stop-color="#c8f542" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <line x1="0" y1="52" x2="900" y2="52" stroke="#1a2530" stroke-width="1"/>
+        <line x1="0" y1="104" x2="900" y2="104" stroke="#1a2530" stroke-width="1"/>
+        <line x1="0" y1="156" x2="900" y2="156" stroke="#1a2530" stroke-width="1"/>
+        <polygon id="chart-area" points="0,200 900,200" fill="url(#g)" opacity="0.4"/>
+        <polyline id="chart-line" points="0,200 900,200" fill="none" stroke="#c8f542" stroke-width="2.5" stroke-linejoin="round"/>
+        <text id="chart-min" x="8" y="200" font-family="IBM Plex Mono" font-size="9" fill="#5a7080"></text>
+        <text id="chart-max" x="8" y="20"  font-family="IBM Plex Mono" font-size="9" fill="#5a7080"></text>
+        <text id="chart-loading" x="450" y="108" font-family="IBM Plex Mono" font-size="11" fill="#5a7080" text-anchor="middle">Fetching chart…</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- RESEARCH -->
+<section id="research">
+  <div class="section-header fade-in">
+    <div><div class="section-tag">Latest Research</div><h2>Deep Analysis</h2></div>
+    <a href="#" class="section-link">All Research →</a>
+  </div>
+  <div class="research-grid fade-in">
+    <div class="research-card">
+      <div class="card-cat">On-Chain Analysis</div>
+      <div class="card-title">The Liquidity Tsunami: How Global M2 Expansion Is Rewriting Bitcoin's Price Discovery</div>
+      <div class="card-excerpt">An 18-month synchronized global monetary expansion is creating the most favorable macro backdrop for digital assets since 2020. We quantify the lag relationships between central bank balance sheets and crypto inflows, and model forward scenarios through Q3 2026.</div>
+      <div class="card-meta"><span>Feb 20, 2026</span><span>·</span><span>24 min read</span><span>·</span><span>Premium</span></div>
+    </div>
+    <div class="research-card">
+      <div class="card-cat macro">Macro</div>
+      <div class="card-title">Fed Pivot Math: Why Rate Cut Timing Matters More Than Magnitude</div>
+      <div class="card-excerpt">Terminal rate paths have become secondary to the signaling velocity of the FOMC. Our analysis of 1994–2019 easing cycles reveals a consistent pattern in risk asset repricing.</div>
+      <div class="card-meta"><span>Feb 18, 2026</span><span>·</span><span>18 min read</span></div>
+    </div>
+    <div class="research-card">
+      <div class="card-cat policy">Regulation</div>
+      <div class="card-title">Strategic Bitcoin Reserve: Institutional Implications of Sovereign Accumulation</div>
+      <div class="card-excerpt">What happens to price discovery when nation-states compete for a fixed-supply asset? We model four scenarios from the current policy landscape.</div>
+      <div class="card-meta"><span>Feb 15, 2026</span><span>·</span><span>12 min read</span></div>
+    </div>
+    <div class="research-card">
+      <div class="card-cat macro">Macro</div>
+      <div class="card-title">Dollar Milkshake Revisited: Is DXY Strength Still a Crypto Headwind?</div>
+      <div class="card-excerpt">The historical inverse BTC–DXY correlation has weakened materially in 2025–26. We examine structural explanations and portfolio construction implications.</div>
+      <div class="card-meta"><span>Feb 12, 2026</span><span>·</span><span>15 min read</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- NEWSLETTER -->
+<div class="newsletter fade-in" id="about">
+  <div>
+    <div class="section-tag">Intelligence Weekly</div>
+    <h2>Research that<br>pays dividends</h2>
+    <p style="color:var(--muted);font-size:.95rem;line-height:1.7;margin-top:20px;max-width:380px">Every Sunday. Macro regime analysis, on-chain signals, monetary policy breakdowns. Read by portfolio managers and serious allocators.</p>
+  </div>
+  <form class="nl-form" onsubmit="return false">
+    <input type="text" placeholder="Full Name">
+    <input type="email" placeholder="Institutional Email">
+    <select><option>Portfolio Manager</option><option>Analyst</option><option>Family Office</option><option>Retail Investor</option><option>Other</option></select>
+    <button class="btn-primary" style="margin-top:4px">Subscribe to Weekly →</button>
+    <div class="nl-note">No spam. Unsubscribe anytime. ~2,400 readers.</div>
+  </form>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-grid">
+    <div class="footer-brand">
+      <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:1.2rem">Crypto<span style="color:var(--accent)">Macro</span></div>
+      <p>Independent research at the intersection of global macro and digital assets. Live data: CoinGecko, Alternative.me. Not financial advice.</p>
+    </div>
+    <div class="footer-col"><h4>Research</h4><ul><li><a href="#">On-Chain</a></li><li><a href="#">Macro Reports</a></li><li><a href="#">Policy Watch</a></li><li><a href="#">Archives</a></li></ul></div>
+    <div class="footer-col"><h4>Data</h4><ul><li><a href="#">Market Terminal</a></li><li><a href="#">M2 Tracker</a></li><li><a href="#">Fed Watch</a></li><li><a href="#">Fear & Greed</a></li></ul></div>
+    <div class="footer-col"><h4>Company</h4><ul><li><a href="#">About</a></li><li><a href="#">Methodology</a></li><li><a href="#">Newsletter</a></li><li><a href="#">Twitter/X</a></li></ul></div>
+  </div>
+  <div class="footer-bottom">
+    <span>© 2026 CryptoMacro Research. All rights reserved.</span>
+    <span>Not financial advice · CoinGecko · Alternative.me</span>
+  </div>
+</footer>
+
+<script>
+// ── Helpers ──────────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+
+function fmtN(n, d=2) {
+  if (n == null) return '—';
+  return Number(n).toLocaleString('en-US', {minimumFractionDigits:d, maximumFractionDigits:d});
+}
+function fmtUSD(n) {
+  if (n == null) return '—';
+  if (Math.abs(n) >= 1e12) return '$' + (n/1e12).toFixed(2) + 'T';
+  if (Math.abs(n) >= 1e9)  return '$' + (n/1e9).toFixed(2) + 'B';
+  if (Math.abs(n) >= 1e6)  return '$' + (n/1e6).toFixed(2) + 'M';
+  return '$' + fmtN(n);
+}
+function fmtPrice(n) {
+  if (n == null) return '—';
+  if (n >= 1000) return '$' + n.toLocaleString('en-US', {maximumFractionDigits:0});
+  if (n >= 1)    return '$' + fmtN(n,2);
+  return '$' + fmtN(n,4);
+}
+function chgHtml(v) {
+  if (v == null) return '<span style="color:var(--muted)">—</span>';
+  const c = v>=0 ? 'chg-pos' : 'chg-neg';
+  return `<span class="${c}">${v>=0?'▲':'▼'} ${Math.abs(v).toFixed(2)}%</span>`;
+}
+
+// ── Scroll animations ────────────────────────────────────────────────────────
+new IntersectionObserver(entries => entries.forEach(e => {
+  if (e.isIntersecting) e.target.classList.add('visible');
+}), {threshold:0.08}).observe.bind(
+  new IntersectionObserver(entries => entries.forEach(e => {
+    if (e.isIntersecting) e.target.classList.add('visible');
+  }), {threshold:0.08})
+);
+const io = new IntersectionObserver(entries => entries.forEach(e => {
+  if (e.isIntersecting) e.target.classList.add('visible');
+}), {threshold:0.08});
+document.querySelectorAll('.fade-in').forEach(el => io.observe(el));
+
+// ── Ticker ───────────────────────────────────────────────────────────────────
+let tickerRAF;
+function startTicker(items) {
+  const track = $('ticker-track');
+  const html = [...items, ...items].join('');
+  track.innerHTML = html;
+
+  cancelAnimationFrame(tickerRAF);
+  let pos = 0;
+  const halfW = track.scrollWidth / 2;
+
+  function step() {
+    pos += 0.6;
+    if (pos >= halfW) pos = 0;
+    track.style.transform = `translateX(-${pos}px)`;
+    tickerRAF = requestAnimationFrame(step);
+  }
+  tickerRAF = requestAnimationFrame(step);
+}
+
+// ── Markets table ─────────────────────────────────────────────────────────────
+function sparkSVG(prices, chg7d) {
+  if (!prices?.length) return '—';
+  const min = Math.min(...prices), max = Math.max(...prices), range = max-min||1;
+  const W=80, H=30;
+  const pts = prices.map((v,i) => {
+    const x = (i/(prices.length-1))*W;
+    const y = H - ((v-min)/range)*H;
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(' ');
+  const col = (chg7d??0) >= 0 ? '#c8f542' : '#ff4d4d';
+  return `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="display:block"><polyline points="${pts}" fill="none" stroke="${col}" stroke-width="1.5" stroke-linejoin="round"/></svg>`;
+}
+
+function renderMarkets(coins) {
+  $('markets-body').innerHTML = coins.map(c => `
+    <tr>
+      <td>
+        <div class="coin-name">
+          <span class="coin-rank">${c.market_cap_rank}</span>
+          <div><div class="coin-sym">${c.symbol.toUpperCase()}</div><div class="coin-full">${c.name}</div></div>
+        </div>
+      </td>
+      <td class="price-cell">${fmtPrice(c.current_price)}</td>
+      <td>${chgHtml(c.price_change_percentage_1h_in_currency)}</td>
+      <td>${chgHtml(c.price_change_percentage_24h)}</td>
+      <td>${chgHtml(c.price_change_percentage_7d_in_currency)}</td>
+      <td class="muted-cell">${fmtUSD(c.market_cap)}</td>
+      <td class="muted-cell">${fmtUSD(c.total_volume)}</td>
+      <td>${sparkSVG(c.sparkline_in_7d?.price?.filter((_,i,a) => i % Math.ceil(a.length/40) === 0), c.price_change_percentage_7d_in_currency)}</td>
+    </tr>`).join('');
+}
+
+// ── Dominance ─────────────────────────────────────────────────────────────────
+const DOM_COLS = ['#c8f542','#3df0c2','#f0b429','#c084fc','#60a5fa','#fb923c','#94a3b8'];
+
+function renderDominance(global) {
+  const pcts = global.data?.market_cap_percentage;
+  if (!pcts) return;
+  const entries = Object.entries(pcts).slice(0,6);
+  const othersVal = 100 - entries.reduce((s,[,v])=>s+v,0);
+  const all = [...entries, ['Others', othersVal]];
+
+  $('dom-bar').innerHTML = all.map(([,v],i) =>
+    `<div class="dom-seg" style="flex:${v.toFixed(2)};background:${DOM_COLS[i]||'#334'}"></div>`
+  ).join('');
+  $('dom-labels').innerHTML = all.map(([k,v],i) =>
+    `<span class="dom-label"><span class="dom-dot" style="background:${DOM_COLS[i]||'#334'}"></span>${k.toUpperCase()} ${v.toFixed(1)}%</span>`
+  ).join('');
+}
+
+// ── Hero stats ────────────────────────────────────────────────────────────────
+function renderHero(coins, global) {
+  const btc = coins.find(c=>c.id==='bitcoin');
+  const eth = coins.find(c=>c.id==='ethereum');
+  if (btc) {
+    $('h-btc-price').innerHTML = fmtPrice(btc.current_price);
+    $('h-btc-chg').innerHTML = `${chgHtml(btc.price_change_percentage_24h)} 24h &nbsp;·&nbsp; ${chgHtml(btc.price_change_percentage_7d_in_currency)} 7d`;
+  }
+  if (eth) {
+    $('h-eth-price').innerHTML = fmtPrice(eth.current_price);
+    $('h-eth-chg').innerHTML = `${chgHtml(eth.price_change_percentage_24h)} 24h &nbsp;·&nbsp; ${chgHtml(eth.price_change_percentage_7d_in_currency)} 7d`;
+  }
+  if (global) {
+    const dom = global.data?.bitcoin_dominance_percentage;
+    const mcap = global.data?.total_market_cap?.usd;
+    const mcapChg = global.data?.market_cap_change_percentage_24h_usd;
+    if (dom) $('h-dom').innerHTML = `${dom.toFixed(1)}<span style="font-size:1rem;color:var(--muted)">%</span>`;
+    if (mcap) $('h-mcap').innerHTML = `Total ${fmtUSD(mcap)} &nbsp; ${chgHtml(mcapChg)} 24h`;
+  }
+}
+
+// ── BTC Chart ─────────────────────────────────────────────────────────────────
+function renderChart(prices) {
+  if (!prices?.length) return;
+  const vals = prices.map(p=>p[1]);
+  const min = Math.min(...vals), max = Math.max(...vals), range = max-min||1;
+  const W=900, H=195;
+  const pts = vals.map((v,i) => {
+    const x = (i/(vals.length-1))*W;
+    const y = H - ((v-min)/range)*(H-15) - 8;
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  });
+  $('chart-line').setAttribute('points', pts.join(' '));
+  $('chart-area').setAttribute('points', `0,${H} ${pts.join(' ')} ${W},${H}`);
+  $('chart-min').textContent = fmtPrice(min);
+  $('chart-max').textContent = fmtPrice(max);
+  $('chart-loading').style.display = 'none';
+  const chg = ((vals[vals.length-1]-vals[0])/vals[0]*100).toFixed(2);
+  $('chart-title').innerHTML = `Bitcoin 7d &nbsp;<span style="color:${chg>=0?'var(--accent)':'var(--red)'};font-family:'IBM Plex Mono',monospace;font-size:.8rem">${chg>=0?'▲':'▼'} ${Math.abs(chg)}%</span>`;
+}
+
+// ── Fear & Greed ──────────────────────────────────────────────────────────────
+async function fetchFearGreed() {
+  try {
+    const r = await fetch('https://api.alternative.me/fng/?limit=1');
+    const d = await r.json();
+    const val = parseInt(d.data[0].value);
+    const label = d.data[0].value_classification;
+    const color = val>=75?'var(--accent)':val>=55?'var(--accent2)':val>=40?'var(--gold)':'var(--red)';
+    $('fng-val').innerHTML = `<span style="color:${color}">${val}</span>`;
+    $('fng-sub').textContent = `${label} · Alternative.me`;
+  } catch {
+    $('fng-val').textContent = 'N/A';
+    $('fng-sub').textContent = 'Unavailable';
+  }
+}
+
+// ── Main fetch ────────────────────────────────────────────────────────────────
+async function fetchAll() {
+  const badge = $('api-badge');
+  try {
+    const [coinsRes, globalRes, chartRes] = await Promise.all([
+      fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=20&page=1&sparkline=true&price_change_percentage=1h%2C24h%2C7d'),
+      fetch('https://api.coingecko.com/api/v3/global'),
+      fetch('https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=7&interval=hourly')
+    ]);
+
+    if (!coinsRes.ok) throw new Error(`${coinsRes.status}`);
+
+    const coins  = await coinsRes.json();
+    const global = await globalRes.json();
+    const chart  = await chartRes.json();
+
+    renderHero(coins, global);
+    renderMarkets(coins);
+    renderDominance(global);
+    renderChart(chart.prices);
+
+    // Build ticker
+    const tickerItems = coins.slice(0,14).map(c => {
+      const chg = c.price_change_percentage_24h;
+      return `<span class="ticker-item"><span class="sym">${c.symbol.toUpperCase()}</span> ${fmtPrice(c.current_price)} <span class="${chg>=0?'up':'dn'}">${chg>=0?'▲':'▼'} ${Math.abs(chg).toFixed(2)}%</span></span>`;
+    });
+    const dom = global.data?.bitcoin_dominance_percentage;
+    const mcap = global.data?.total_market_cap?.usd;
+    if (dom) tickerItems.push(`<span class="ticker-item"><span class="sym">BTC DOM</span> ${dom.toFixed(1)}%</span>`);
+    if (mcap) tickerItems.push(`<span class="ticker-item"><span class="sym">TOTAL MCAP</span> ${fmtUSD(mcap)}</span>`);
+    startTicker(tickerItems);
+
+    badge.textContent = '● Live';
+    badge.className = 'api-badge ok';
+    $('last-updated').textContent = `Live data via CoinGecko · Updated ${new Date().toLocaleTimeString()} · Auto-refreshes every 60s`;
+
+    setTimeout(fetchAll, 60000);
+  } catch (err) {
+    console.error('Fetch error:', err);
+    badge.textContent = `✕ Rate limited — retry in 90s`;
+    badge.className = 'api-badge err';
+    $('last-updated').textContent = `CoinGecko free tier: 30 req/min. Retrying in 90s… (${err.message})`;
+    setTimeout(fetchAll, 90000);
+  }
+}
+
+fetchAll();
+fetchFearGreed();
+</script>
+</body>
+</html>
